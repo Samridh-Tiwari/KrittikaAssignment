@@ -1,0 +1,38 @@
+# Lets import the neccessary libraries
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urlparse, urljoin
+
+# This function gets all the internallinks from a given URL
+def get_internal_links(url):
+    internal_links = set()  # We'll store the links in a set to avoid duplicates
+    domain = urlparse(url).netloc  # Extracting the domain from the URL
+    response = requests.get(url)  # Sending a request to the URL
+    soup = BeautifulSoup(response.content, 'html.parser')  # Parsing the HTML content
+    # Finding all the tags that might contains links
+    for link in soup.find_all(['a', 'link', 'script', 'img'], href=True):
+        href = link.get('href')  # Getting the 'href' attribute value
+        if href:  # If the 'href' attribute exist
+            href = urljoin(url, href)  # Making the URL absolute
+            # Checking if the link belongs to the same domain
+            if urlparse(href).netloc == domain:
+                internal_links.add(href)  # Adding the internal link to the set
+    return internal_links
+
+# This function crawl through the internal links recusively
+def crawl(url, visited=None):
+    if visited is None:
+        visited = set()  # We'll keep track of visited URLs to avoid revisiting them
+    internal_links = get_internal_links(url)  # Getting internal links from the URL
+    visited.add(url)  # Adding the current URL to the visited set
+    for link in internal_links:  # Iterating through the internal links
+        if link not in visited:  # Checking if the link have not been visited before
+            print(link)  # Printing the link
+            crawl(link, visited)  # Recusively crawling the internal link
+
+# Main function to start crawling
+if __name__ == "__main__":
+    url = "https://krittikaiitb.github.io"  # Starting URL
+    print("Internal Links:")
+    crawl(url)  # Starting the crawling process from the given URL
+
